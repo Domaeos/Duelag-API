@@ -1,4 +1,4 @@
-from sqlalchemy import TIMESTAMP, Boolean, Column, Integer, String, text
+from sqlalchemy import TIMESTAMP, Boolean, Column, DateTime, Integer, String, text
 from database import Base
 
 class User(Base):
@@ -10,3 +10,11 @@ class User(Base):
     password = Column(String(100))
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'))
     verified = Column(Boolean, server_default='FALSE')
+
+class TokenTable(Base):
+    __tablename__ = "token"
+    user_id = Column(Integer)
+    access_token = Column(String(450), primary_key=True)
+    refresh_token = Column(String(450),nullable=False)
+    status = Column(Boolean)
+    created_date = Column(TIMESTAMP(timezone=True), server_default=text('now()'))
