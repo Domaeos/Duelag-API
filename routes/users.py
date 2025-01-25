@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 from sqlalchemy.orm import Session
 from auth_bearer import JWTBearer
-from config import JWT_REFRESH_SECRET_KEY
+from fastapi.security import HTTPBearer
 from database import get_session
 import models
 import schemas
@@ -64,9 +64,8 @@ def getusers(dependencies=Depends(JWTBearer()),session: Session = Depends(get_se
     return user
 
 @router.post("/refresh")
-def refresh_token(request: schemas.RefreshRequest, session: Session = Depends(get_session)):
+def refresh_token(request: schemas.RefreshRequest, auth: HTTPBearer = Depends(HTTPBearer()), session: Session = Depends(get_session)):
     try:
-
         payload = decodeJWT(request.refresh_token, True)
         if not payload:
            raise HTTPException(status_code=400, detail="Invalid refresh token")
@@ -75,25 +74,32 @@ def refresh_token(request: schemas.RefreshRequest, session: Session = Depends(ge
         if not user_id:
             raise HTTPException(status_code=400, detail="Invalid refresh token")
 
+        old_access_token = auth.credentials or None
         token_record = session.query(models.TokenTable).filter_by(
             user_id=user_id,
             refresh_token=request.refresh_token,
+            access_token=old_access_token,
             status=True
         ).first()
 
+
         if not token_record:
             logger.error("Error finding token record")
-            raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
 
         new_access_token = create_access_token(user_id)
+        new_refresh_token = create_refresh_token(user_id)
+
         token_record.access_token = new_access_token
+        token_record.refresh_token = new_refresh_token
 
         session.commit()
         session.refresh(token_record)
 
         return {
-            "detail": "Token refreshed successfully",
+            "detail": "Tokens refreshed successfully",
             "access_token": new_access_token,
+            "refresh_token": new_refresh_token,
         }
 
 
