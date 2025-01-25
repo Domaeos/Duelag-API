@@ -64,7 +64,7 @@ def getusers(dependencies=Depends(JWTBearer()),session: Session = Depends(get_se
     return user
 
 @router.post("/refresh")
-def refresh_token(request: schemas.RefreshRequest, auth: HTTPBearer = Depends(HTTPBearer()), session: Session = Depends(get_session)):
+def refresh_token(request: schemas.RefreshRequest, session: Session = Depends(get_session)):
     try:
         payload = decodeJWT(request.refresh_token, True)
         if not payload:
@@ -74,11 +74,9 @@ def refresh_token(request: schemas.RefreshRequest, auth: HTTPBearer = Depends(HT
         if not user_id:
             raise HTTPException(status_code=400, detail="Invalid refresh token")
 
-        old_access_token = auth.credentials or None
         token_record = session.query(models.TokenTable).filter_by(
             user_id=user_id,
             refresh_token=request.refresh_token,
-            access_token=old_access_token,
             status=True
         ).first()
 
