@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 from sqlalchemy.orm import Session
-from auth_bearer import JWTBearer
+from middleware.auth_bearer import JWTBearer
 from fastapi.security import HTTPBearer
 from database import get_session
 import models
@@ -54,8 +54,9 @@ def login_user(request: schemas.LoginUser, session: Session = Depends(get_sessio
   session.refresh(token_db)
 
   return {
-      "access_token": new_access_token,
-      "refresh_token": new_refresh_token,
+    "username": user.username,
+    "access_token": new_access_token,
+    "refresh_token": new_refresh_token,
   }
 
 @router.get('/all')
