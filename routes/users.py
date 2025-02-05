@@ -28,6 +28,7 @@ def register_user(user: schemas.CreateUser, session: Session = Depends(get_sessi
   encrypted_password = get_password_hash(user.password)
 
   new_user = models.User(username=user.username, email=user.email, password=encrypted_password)
+  new_user.game_data = models.GameData()
   session.add(new_user)
   session.commit()
   session.refresh(new_user)
